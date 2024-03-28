@@ -6,6 +6,16 @@
 -- be extended to other languages as well. That's why it's called
 -- kickstart.nvim and not kitchen-sink.nvim ;)
 
+local function get_arguments()
+  return coroutine.create(function(dap_run_co)
+    local args = {}
+    vim.ui.input({ prompt = 'Args: ' }, function(input)
+      args = vim.split(input or '', ' ')
+      coroutine.resume(dap_run_co, args)
+    end)
+  end)
+end
+
 return {
   -- NOTE: Yes, you can install new plugins here!
   'mfussenegger/nvim-dap',
@@ -85,6 +95,16 @@ return {
     dap.listeners.before.event_exited['dapui_config'] = dapui.close
 
     -- Install golang specific config
-    require('dap-go').setup()
+    require('dap-go').setup {
+      dap_configurations = {
+        {
+          type = 'go',
+          name = 'Debug Package (Arguments)',
+          request = 'launch',
+          program = '${fileDirname}',
+          args = get_arguments,
+        },
+      },
+    }
   end,
 }
